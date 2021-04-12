@@ -8,6 +8,7 @@ ThisBuild / useSuperShell := false
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
 
 val catsVersion = "2.4.2"
+val catsEffectVersion = "3.0.0"
 val circeVersion = "0.13.0"
 val http4sVersion = "1.0.0-M6"
 val logbackVersion = "1.2.3"
@@ -17,13 +18,16 @@ val build = taskKey[Unit]("Format, compile, and test")
 
 val sharedSettings = Seq(
   libraryDependencies ++= Seq(
-    "org.typelevel" %%% "cats-core"     % catsVersion,
-    "io.circe"      %%% "circe-core"    % circeVersion,
-    "io.circe"      %%% "circe-generic" % circeVersion,
-    "io.circe"      %%% "circe-parser"  % circeVersion,
-    "org.scalameta" %%% "munit"         % munitVersion % Test
+    "org.typelevel" %% "cats-core"     % catsVersion,
+    "org.typelevel" %% "cats-free"     % catsVersion,
+    "org.typelevel" %% "cats-effect"   % catsEffectVersion,
+    "io.circe"      %% "circe-core"    % circeVersion,
+    "io.circe"      %% "circe-generic" % circeVersion,
+    "io.circe"      %% "circe-parser"  % circeVersion,
+    "org.scalameta" %% "munit"         % munitVersion % Test
   ),
   scalacOptions ++= Seq(
+    "-deprecation",
     "-Yrangepos",
     "-Ymacro-annotations",
     "-Wunused:imports",
