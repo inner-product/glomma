@@ -36,7 +36,10 @@ object Distributions {
       cluster.map(cluster => Customer(name, UUID.randomUUID(), cluster))
     )
 
-  def makeCustomers(nCustomers: Int, customer: Random[Customer]): Random[List[Customer]] =
+  def makeCustomers(
+      nCustomers: Int,
+      customer: Random[Customer]
+  ): Random[List[Customer]] =
     customer.chooseN(nCustomers)
 
   val prices = Random.weighted(
@@ -58,22 +61,25 @@ object Distributions {
 
   /** Number of purchases made in a session */
   val nPurchases: Random[Int] = Random.weighted(
-    (0, 20),
-    (1, 30),
-    (2, 10),
-    (3, 10),
-    (4, 10),
-    (5, 5),
-    (6, 5),
-    (7, 5),
-    (8, 5)
+    (0, 0.2),
+    (1, 0.3),
+    (2, 0.1),
+    (3, 0.1),
+    (4, 0.1),
+    (5, 0.05),
+    (6, 0.05),
+    (7, 0.05),
+    (8, 0.05)
   )
 
   /** Number of pages viewed in a session (is always greater than or equal to the number of purchases) */
   def nViews(nPurchases: Int): Random[Int] =
-    Random.int(nPurchases, nPurchases * 4)
+    Random.int(nPurchases, nPurchases * 4 + 4)
 
-  def makeSession(customer: Customer, clusters: Array[Random[Book]]): Random[Session] =
+  def makeSession(
+      customer: Customer,
+      clusters: Array[Random[Book]]
+  ): Random[Session] =
     for {
       nP <- nPurchases
       nV <- nViews(nP)
@@ -83,19 +89,26 @@ object Distributions {
       viewed = books.map(book => PageView(sessionId, book))
     } yield Session(sessionId, customer, viewed, books.take(nP))
 
-  def makeScenario(nCustomers: Int, nClusters: Int, nSessions: Int): Random[List[Session]] = {
+  def makeScenario(
+      nCustomers: Int,
+      nClusters: Int,
+      nSessions: Int
+  ): Random[Scenario] = {
     val cluster = makeCluster(nClusters)
     val customer = makeCustomer(cluster)
 
-    val sessions =
+    val scenario =
       for {
-        books     <- makeBooks
+        books <- makeBooks
         customers <- makeCustomers(nCustomers, customer)
-        clusters  =  makeClusters(nClusters, books)
-        sessions  <- Random.oneOf(customers: _*).flatMap(customer => makeSession(customer, clusters)).chooseN(nSessions)
-      } yield sessions
+        clusters = makeClusters(nClusters, books)
+        sessions <- Random
+          .oneOf(customers: _*)
+          .flatMap(customer => makeSession(customer, clusters))
+          .chooseN(nSessions)
+      } yield Scenario(customers, books, sessions)
 
-    sessions
+    scenario
   }
 
   /** Small scenario for testings */

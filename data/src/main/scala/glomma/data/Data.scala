@@ -18,3 +18,8 @@ final case class Session(
     viewed: List[PageView],
     purchased: List[Book]
 )
+final case class Scenario(
+    customers: List[Customer],
+    books: List[Book],
+    sessions: List[Session]
+)

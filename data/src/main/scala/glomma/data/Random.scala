@@ -18,7 +18,8 @@ object Random {
   object RandomOp {
     final case class Always[A](get: A) extends RandomOp[A]
     final case class Weighted[A](elts: Seq[(A, Double)]) extends RandomOp[A] {
-      // Cumulative probability mass assigned to each element
+      // Weights holds the cumulative probability mass assigned to an element
+      // and preceding elements. This makes sampling a staight forward process.
       val (weights: Array[Double], elements: mutable.ArrayBuffer[A]) = {
         val w = Array.ofDim[Double](elts.size)
         val b = mutable.ArrayBuffer.newBuilder[A]
@@ -27,10 +28,17 @@ object Random {
         var sum = 0.0
         elts.foreach { case (elt, weight) =>
           sum = sum + weight
-          w(i) = weight
+          w(i) = sum
           b.addOne(elt)
           i = i + 1
         }
+
+        i = 0
+        while (i < w.size) {
+          w(i) = w(i) / sum
+          i = i + 1
+        }
+        w(w.size - 1) = 1.0
 
         (w, b.result())
       }
@@ -139,8 +147,13 @@ object Random {
   /** Create a `Random` that generates an `Int` uniformly distributed in the range
     * greater than or equal to zero and less than `upper`.
     */
-  def natural(upperLimit: Int): Random[Int] =
+  def natural(upperLimit: Int): Random[Int] = {
+    assert(
+      upperLimit > 0,
+      "The upperLimit for a Random natural must be greater than or equal to zero"
+    )
     Free.liftF[RandomOp, Int](Natural(upperLimit))
+  }
 
   /** Create a `Random` that generates a `Double` uniformly distributed between
     * 0.0 and 1.0.
