@@ -31,7 +31,6 @@ val sharedSettings = Seq(
     "-Yrangepos",
     "-Ymacro-annotations",
     "-Wunused:imports",
-    "-Werror"
   ),
   testFrameworks += new TestFramework("munit.Framework"),
   addCompilerPlugin(scalafixSemanticdb)
