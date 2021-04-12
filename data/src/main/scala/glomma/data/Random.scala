@@ -2,17 +2,35 @@ package glomma.data
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.reflect.ClassTag
 import scala.util.{Random => Rng}
 
+import breeze.stats.distributions.{Beta => BreezeBeta}
 import cats.Comonad
 import cats.free.Free
 import cats.syntax.all._
 
 object Random {
+
+  /** Chose an index at random from a monotonically increasing set of weights that end at 1.0 */
   @tailrec
   def pick(idx: Int, choice: Double, weights: Array[Double]): Int =
     if (choice <= weights(idx)) idx
     else pick(idx + 1, choice, weights)
+
+  /** Shuffle an array in-place, using the Fisher-Yates algorithm */
+  def shuffle[A](elements: Array[A], rng: Rng): Unit = {
+    var i = 0
+    while (i < elements.size - 1) {
+      val gap = elements.size - i
+      val j = rng.nextInt(gap) + i
+      val tmp = elements(i)
+      elements(i) = elements(j)
+      elements(j) = tmp
+      i = i + 1
+    }
+    ()
+  }
 
   sealed abstract class RandomOp[A]
   object RandomOp {
@@ -52,6 +70,13 @@ object Random {
     final case class Natural(upperLimit: Int) extends RandomOp[Int]
     final case object RandomDouble extends RandomOp[Double]
     final case object Normal extends RandomOp[Double]
+    final case class Beta(alpha: Double, beta: Double)
+        extends RandomOp[Double] {
+      val b = BreezeBeta(alpha, beta)
+
+      def sample(): Double =
+        b.draw()
+    }
     // Essentially a Markov Chain. State is the state and generate is the transition function
     final case class Fold[A, State](
         var state: State,
@@ -63,8 +88,10 @@ object Random {
         event
       }
     }
-    final case class Stick[A](elements: Seq[A]) extends RandomOp[A] {
+    final case class Stick[A: ClassTag](elts: Seq[A], break: Random[Double])
+        extends RandomOp[A] {
       var initialized = false
+      val elements = elts.toArray
       // Cumulative probability mass assigned to each element
       val weights = Array.ofDim[Double](elements.size)
 
@@ -78,6 +105,10 @@ object Random {
       def initialize(rng: Rng): Unit = {
         if (initialized) ()
         else {
+          // Shuffle the elements, otherwise all sticks on these elements will
+          // be biased towards the same elements
+          Random.shuffle(elements, rng)
+
           var i = 0
           var stick = 1.0
           var sum = 0.0
@@ -85,8 +116,8 @@ object Random {
           elements.foreach { _ =>
             if (i == last) weights(i) = 1.0
             else {
-              val break = rng.nextDouble()
-              val w = stick * break
+              val proportion = break.sample(rng)
+              val w = stick * proportion
               sum = sum + w
               weights(i) = sum
               stick = (stick - w)
@@ -116,6 +147,7 @@ object Random {
             case Natural(u)     => rng.nextInt(u)
             case RandomDouble   => rng.nextDouble()
             case Normal         => rng.nextGaussian()
+            case b: Beta        => b.sample()
             case c: Fold[A, _]  => c.sample(rng)
             case s: Stick[A]    => s.sample(rng)
           }
@@ -172,6 +204,9 @@ object Random {
   def weighted[A](elts: (A, Double)*): Random[A] =
     Free.liftF[RandomOp, A](Weighted(elts))
 
+  def beta(alpha: Double, beta: Double): Random[Double] =
+    Free.liftF[RandomOp, Double](Beta(alpha, beta))
+
   /** Create a `Random` that generates a normally distributed `Double` with mean 0
     * and standard deviation 1.0.
     */
@@ -192,12 +227,23 @@ object Random {
     Free.liftF[RandomOp, A](Fold(zero, f))
 
   /** Construct a `Random` that samples from a finite collection of data using a
-    * stick breaking construction which assigns most of the probability mass
-    * to a few of the elements. The stick breaks are samples from a uniform
-    * distribution.
+    * stick breaking construction which assigns most of the probability mass to
+    * a few of the elements. The stick breaks are sampled from Beta(1, 5), which
+    * biases the stick breaking towards more breaks than a uniform distribution.
     */
-  def finiteStickBreaking[A](elements: A*): Random[A] =
-    Free.liftF[RandomOp, A](Stick(elements))
+  def finiteStickBreaking[A: ClassTag](elements: A*): Random[A] =
+    Free.liftF[RandomOp, A](Stick(elements, Random.beta(1, 5)))
+
+  /** Construct a `Random` that samples from a finite collection of data using a
+    * stick breaking construction which assigns most of the probability mass to
+    * a few of the elements. The stick breaks are sampled from the given
+    * distribution, which must returns Doubles in 0 <= x < 1.
+    */
+  def finiteStickBreaking[A: ClassTag](
+      break: Random[Double],
+      elements: A*
+  ): Random[A] =
+    Free.liftF[RandomOp, A](Stick(elements, break))
 
   /** Given a source of random data, create a `Random` that produces N samples at once from that source.
     */

@@ -7,6 +7,7 @@ ThisBuild / useSuperShell := false
 // ScalaFix configuration
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
 
+val breezeVersion = "1.1"
 val catsVersion = "2.4.2"
 val catsEffectVersion = "3.0.0"
 val circeVersion = "0.13.0"
@@ -18,6 +19,7 @@ val build = taskKey[Unit]("Format, compile, and test")
 
 val sharedSettings = Seq(
   libraryDependencies ++= Seq(
+    "org.scalanlp"  %% "breeze"        % breezeVersion,
     "org.typelevel" %% "cats-core"     % catsVersion,
     "org.typelevel" %% "cats-free"     % catsVersion,
     "org.typelevel" %% "cats-effect"   % catsEffectVersion,
