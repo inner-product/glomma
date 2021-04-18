@@ -1,4 +1,4 @@
-package glomma.data
+package glomma.data.random
 
 import scala.annotation.tailrec
 import scala.collection.mutable

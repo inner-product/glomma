@@ -9,7 +9,7 @@ ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports"
 
 val breezeVersion = "1.1"
 val catsVersion = "2.4.2"
-val catsEffectVersion = "3.0.0"
+val catsEffectVersion = "2.2.0"
 val circeVersion = "0.13.0"
 val http4sVersion = "1.0.0-M6"
 val logbackVersion = "1.2.3"
@@ -42,5 +42,10 @@ lazy val data = project
   .in(file("data"))
   .settings(
     sharedSettings,
+    libraryDependencies ++= Seq(
+      "org.http4s" %% "http4s-dsl" % http4sVersion,
+      "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+      "org.http4s" %% "http4s-blaze-client" % http4sVersion
+    ),
     build := { Def.sequential(scalafixAll.toTask(""), scalafmtAll, Test / test).value }
   )

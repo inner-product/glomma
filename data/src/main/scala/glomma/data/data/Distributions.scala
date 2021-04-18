@@ -1,8 +1,9 @@
-package glomma.data
+package glomma.data.data
 
 import java.util.UUID
 
 import cats.syntax.all._
+import glomma.data.random.Random
 
 object Distributions {
   val firstName: Random[String] =

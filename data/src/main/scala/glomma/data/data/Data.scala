@@ -1,4 +1,4 @@
-package glomma.data
+package glomma.data.data
 
 import java.util.UUID
 

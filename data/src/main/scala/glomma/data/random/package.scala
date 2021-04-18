@@ -1,8 +1,8 @@
-package glomma
+package glomma.data
 
 import cats.free.Free
 
-package object data {
+package object random {
   type Random[A] = Free[Random.RandomOp, A]
 
   implicit class RandomExtension[A](random: Random[A]) {

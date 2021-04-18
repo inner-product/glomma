@@ -1,4 +1,4 @@
-package glomma.data
+package glomma.data.data
 
 import scala.io.{Codec, Source}
 
