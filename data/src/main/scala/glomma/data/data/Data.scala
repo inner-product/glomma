@@ -1,6 +1,7 @@
 package glomma.data.data
 
 import java.util.UUID
+import glomma.event.Event
 
 object Data {
   val books: List[String] = Reader.read("books.txt")
@@ -13,11 +14,19 @@ final case class Book(name: String, price: Double)
 final case class Customer(name: String, customerId: UUID, cluster: Int)
 final case class PageView(sessionId: UUID, book: Book)
 final case class Session(
-    id: UUID,
+    sessionId: UUID,
     customer: Customer,
     viewed: List[PageView],
     purchased: List[Book]
-)
+) {
+  def toEvents: List[Event] = {
+    val start = Event.SessionStart(id = sessionId, customerId = customer.customerId, customerName = customer.name)
+    val views = viewed.map(v => Event.View(sessionId, v.book.name))
+    val purchases = purchased.map(b => Event.Purchase(sessionId, b.name, b.price))
+
+    start :: (purchases ++ views)
+  }
+}
 final case class Scenario(
     customers: List[Customer],
     books: List[Book],

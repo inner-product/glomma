@@ -35,6 +35,7 @@ object Random {
   sealed abstract class RandomOp[A]
   object RandomOp {
     final case class Always[A](get: A) extends RandomOp[A]
+    final case class Delay[A](thunk: () => A) extends RandomOp[A]
     final case class Weighted[A](elts: Seq[(A, Double)]) extends RandomOp[A] {
       // Weights holds the cumulative probability mass assigned to an element
       // and preceding elements. This makes sampling a staight forward process.
@@ -142,6 +143,7 @@ object Random {
         override def extract[A](op: RandomOp[A]): A =
           op match {
             case Always(a)      => a
+            case Delay(thunk)   => thunk()
             case w: Weighted[A] => w.sample(rng)
             case RandomInt      => rng.nextInt()
             case Natural(u)     => rng.nextInt(u)
@@ -161,6 +163,10 @@ object Random {
   /** Create a `Random` that always generates the given value. */
   def always[A](in: A): Random[A] =
     Free.pure(in)
+
+  /** Create a `Random` that generates data from an effectful call-by-name value */
+  def delay[A](in: => A): Random[A] =
+    Free.liftF[RandomOp, A](Delay(() => in))
 
   /** Create a `Random` that generates an `Int` uniformly distributed across the entire range. */
   def int: Random[Int] =
