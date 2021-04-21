@@ -1,12 +1,9 @@
 package glomma.data.client
 
-import cats.effect._
-import org.http4s._
-import org.http4s.dsl.io._
-import org.http4s.implicits._
-import org.http4s.client.blaze._
-import org.http4s.client._
 import scala.concurrent.ExecutionContext.global
+
+import cats.effect._
+import org.http4s.client.blaze._
 
 object Client extends IOApp {
   def run(args: List[String]): IO[ExitCode] = {

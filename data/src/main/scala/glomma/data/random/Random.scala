@@ -202,7 +202,19 @@ object Random {
   /** Create a `Random` that generates one of the provided values with uniform
     * distribution.
     */
-  def oneOf[A](elts: A*): Random[A] = {
+  def oneOf[A](elts: A*): Random[A] =
+    oneOfSeq(elts)
+
+  /** Generate from one of the provided `Random` values with uniform
+    * distribution.
+    */
+  def oneOfM[A](elts: Random[A]*): Random[A] =
+    oneOf(elts: _*).flatMap(x => x)
+
+  /** Create a `Random` that generates a value from the finite Seq with uniform
+    * distribution.
+    */
+  def oneOfSeq[A](elts: Seq[A]): Random[A] = {
     val length = elts.length
     Random.natural(length).map(idx => elts(idx))
   }

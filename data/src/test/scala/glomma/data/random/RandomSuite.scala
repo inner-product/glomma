@@ -1,4 +1,4 @@
-package glomma.data
+package glomma.data.random
 
 class RandomSuite extends munit.FunSuite {
   test("always generate the single value") {

@@ -1,6 +1,7 @@
 package glomma.data.data
 
 import java.util.UUID
+
 import glomma.event.Event
 
 object Data {
@@ -20,9 +21,14 @@ final case class Session(
     purchased: List[Book]
 ) {
   def toEvents: List[Event] = {
-    val start = Event.SessionStart(id = sessionId, customerId = customer.customerId, customerName = customer.name)
+    val start = Event.SessionStart(
+      id = sessionId,
+      customerId = customer.customerId,
+      customerName = customer.name
+    )
     val views = viewed.map(v => Event.View(sessionId, v.book.name))
-    val purchases = purchased.map(b => Event.Purchase(sessionId, b.name, b.price))
+    val purchases =
+      purchased.map(b => Event.Purchase(sessionId, b.name, b.price))
 
     start :: (purchases ++ views)
   }

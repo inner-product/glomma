@@ -1,4 +1,4 @@
-package glomma.data
+package glomma.data.data
 
 class DistributionsSuite extends munit.FunSuite {
   test("name generates famous names first") {
