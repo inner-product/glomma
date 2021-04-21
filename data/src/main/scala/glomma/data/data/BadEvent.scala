@@ -41,7 +41,7 @@ final case class BadEvent(scenario: Scenario) {
       for {
         s <- session
         b <- book
-      } yield Event.Purchase(s.sessionId, b.name, b.price * 0.9)
+      } yield Event.Purchase(s.sessionId, b.name, -b.price)
     )
 
   val generate: Random[Event] =
