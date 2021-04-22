@@ -1,6 +1,7 @@
 package glomma.data.data
 
 import java.util.UUID
+
 import cats.data.NonEmptyList
 import glomma.event.Event
 
