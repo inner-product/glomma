@@ -1,3 +1,15 @@
+Notes:
+
+The `data` project has a service that will send a lot of events to the
+`IngestServer` (once it is listening on the correct port). To run it:
+
+- change to the `data` project (`project data`)
+- `run`
+
+You probably want to use two shells, one to run this service and one to run the
+`IngestServer`.
+
+
 Mission 0:
 
 The `IngestServer` is listening on the wrong port. It needs to listen on 8808.
