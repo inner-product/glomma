@@ -40,6 +40,13 @@ val sharedSettings = Seq(
   addCompilerPlugin(scalafixSemanticdb)
 )
 
+lazy val event = project
+  .in(file("event"))
+  .settings(
+    sharedSettings,
+    build := { Def.sequential(scalafixAll.toTask(""), scalafmtAll, Test / test).value }
+  )
+
 lazy val data = project
   .in(file("data"))
   .settings(
@@ -54,13 +61,6 @@ lazy val data = project
   )
   .dependsOn(event)
 
-lazy val event = project
-  .in(file("event"))
-  .settings(
-    sharedSettings,
-    build := { Def.sequential(scalafixAll.toTask(""), scalafmtAll, Test / test).value }
-  )
-
 lazy val ingest = project
   .in(file("ingest"))
   .settings(
@@ -70,4 +70,4 @@ lazy val ingest = project
     ),
     build := { Def.sequential(scalafixAll.toTask(""), scalafmtAll, Test / test).value }
   )
-  .dependsOn(event)
+  .dependsOn(event, data % Test)
