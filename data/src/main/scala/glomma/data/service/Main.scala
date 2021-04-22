@@ -1,7 +1,7 @@
 package glomma.data.client
 
 import cats.effect._
-import glomma.data.data.Distributions
+import glomma.data.data.Scenarios
 
 object Main extends IOApp {
   def run(args: List[String]): IO[ExitCode] = {
@@ -12,15 +12,17 @@ object Main extends IOApp {
       args match {
         case "small" :: _ =>
           println("Using small scenario")
-          Distributions.small
+          Scenarios.small
         case "large" :: _ =>
           println("Using large scenario")
-          Distributions.large
+          Scenarios.large
         case other :: _ =>
-          sys.error(s"I don't know about the scenario ${other}. Please use small or large (small is the default)")
+          sys.error(
+            s"I don't know about the scenario ${other}. Please use small or large (small is the default)"
+          )
         case Nil =>
           println("Defaulting to small scenario")
-          Distributions.small
+          Scenarios.small
       }
     Client(scenario.sample(), Configuration()).run
   }

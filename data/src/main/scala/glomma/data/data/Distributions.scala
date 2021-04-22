@@ -111,10 +111,4 @@ object Distributions {
 
     scenario
   }
-
-  /** Small scenario for testings */
-  val small = makeScenario(100, 5, 1000)
-
-  /** Large scenario for the real thing */
-  val large = makeScenario(10000, 20, 1000000)
 }
