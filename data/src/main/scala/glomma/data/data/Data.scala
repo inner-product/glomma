@@ -1,7 +1,7 @@
 package glomma.data.data
 
 import java.util.UUID
-
+import cats.data.NonEmptyList
 import glomma.event.Event
 
 object Data {
@@ -20,7 +20,7 @@ final case class Session(
     viewed: List[PageView],
     purchased: List[Book]
 ) {
-  def toEvents: List[Event] = {
+  def toEvents: NonEmptyList[Event] = {
     val start = Event.SessionStart(
       id = sessionId,
       customerId = customer.customerId,
@@ -30,7 +30,7 @@ final case class Session(
     val purchases =
       purchased.map(b => Event.Purchase(sessionId, b.name, b.price))
 
-    start :: (purchases ++ views)
+    NonEmptyList(start, (purchases ++ views))
   }
 }
 final case class Scenario(
