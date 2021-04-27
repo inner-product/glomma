@@ -37,7 +37,8 @@ val sharedSettings = Seq(
     "-Wunused:imports"
   ),
   testFrameworks += new TestFramework("munit.Framework"),
-  addCompilerPlugin(scalafixSemanticdb)
+  addCompilerPlugin(scalafixSemanticdb),
+  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.3" cross CrossVersion.full)
 )
 
 lazy val event = project
