@@ -2,6 +2,8 @@ package glomma.ingest.service
 
 import glomma.data.data._
 import glomma.data.random._
+import glomma.event
+import glomma.event.Event
 import munit._
 
 class ValidationServiceSuite extends FunSuite {
@@ -15,14 +17,31 @@ class ValidationServiceSuite extends FunSuite {
   // All the valid events from the scenario
   val goodEvents = scenario.sessions.flatMap(_.toEvents.toList)
 
-  // Uncomment the below and implement validationService
-  // val validationService: ValidationService = ???
+  val bookService = new BookService()
+  bookService.addBooks(scenario.books.map(b => event.Book(b.name, b.price)))
 
-  // test("All bad events are invalid"){
-  //   badEvents.map(evt => assert(validationService.validate(evt).isLeft))
-  // }
+  val sessionService = new SessionService()
+  scenario.sessions.foreach(s =>
+    sessionService.addSession(
+      Event.SessionStart(s.sessionId, s.customer.customerId, s.customer.name)
+    )
+  )
 
-  // test("All good events are valid"){
-  //   goodEvents.map(evt => assert(validationService.validate(evt).isRight))
-  // }
+  val validationService: ValidationService =
+    new ValidationService(bookService, sessionService)
+
+  test("All bad events are invalid") {
+    badEvents.map(evt =>
+      assert(
+        validationService.validate(evt).isLeft,
+        s"$evt was not marked as invalid"
+      )
+    )
+  }
+
+  test("All good events are valid") {
+    goodEvents.map(evt =>
+      assertEquals(validationService.validate(evt), Right(evt))
+    )
+  }
 }
