@@ -37,5 +37,7 @@ Mission 2:
  
  Mission 3:
  
- Start validating the other events. Some will have invalid sessions, or books,
- or other details. Try to catch as many as you can.
+ Implement `ValidationService`, building on `BookService` and `SessionService`.
+ Two things will help you:
+ - there is a simple library for composing validation rules in `glomma.event.rule.Rule`
+ - there is a test harness in `ValidationServiceSuite`
