@@ -23,6 +23,6 @@ class ValidationServiceSuite extends FunSuite {
   // }
 
   // test("All good events are valid"){
-  //   badEvents.map(evt => assert(validationService.validate(evt).isRight))
+  //   goodEvents.map(evt => assert(validationService.validate(evt).isRight))
   // }
 }
