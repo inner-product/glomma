@@ -16,12 +16,46 @@ class FrequentItemServiceSuite extends FunSuite {
 
     scenario.sessions.foreach(session => service.add(session.customer.name))
     val customers = Await.result(service.get, Duration(30, SECONDS))
-    assertEquals(customers.size, 10)
+    assert(customers.size <= 10)
 
     println("-----------------------------------------")
     println("Frequent Customers")
     println("-----------------------------------------")
     customers.foreach { case (name, _) =>
+      println(name)
+    }
+  }
+
+  test("Most frequently viewed books") {
+    val service = new FrequentItemService[String](10)
+
+    scenario.sessions.foreach(session =>
+      session.viewed.foreach(view => service.add(view.book.name))
+    )
+    val views = Await.result(service.get, Duration(30, SECONDS))
+    assert(views.size <= 10)
+
+    println("-----------------------------------------")
+    println("Frequently Viewed Books")
+    println("-----------------------------------------")
+    views.foreach { case (name, _) =>
+      println(name)
+    }
+  }
+
+  test("Most frequently purchased books") {
+    val service = new FrequentItemService[String](10)
+
+    scenario.sessions.foreach(session =>
+      session.purchased.foreach(book => service.add(book.name))
+    )
+    val purchases = Await.result(service.get, Duration(30, SECONDS))
+    assert(purchases.size <= 10)
+
+    println("-----------------------------------------")
+    println("Frequently Purchased Books")
+    println("-----------------------------------------")
+    purchases.foreach { case (name, _) =>
       println(name)
     }
   }
