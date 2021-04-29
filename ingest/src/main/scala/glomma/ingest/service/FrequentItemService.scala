@@ -1,7 +1,6 @@
 package glomma.ingest.service
 
 import glomma.ingest.algorithm.MisraGries
-import glomma.ingest.algorithm
 import java.util.concurrent.ArrayBlockingQueue
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
@@ -9,7 +8,7 @@ import scala.concurrent.{Future, Promise}
 class FrequentItemService[A](size: Int) {
   import FrequentItemService._
 
-  private val frequentItems: MisraGries[A] = algorithm.MisraGries(size)
+  private val frequentItems: MisraGries[A] = new MisraGries(size)
   private val queue: ArrayBlockingQueue[Event[A]] = new ArrayBlockingQueue(5)
 
   private val concurrentProcess = Future{
