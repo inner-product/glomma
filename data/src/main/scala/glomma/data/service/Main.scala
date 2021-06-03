@@ -24,6 +24,6 @@ object Main extends IOApp {
           println("Defaulting to small scenario")
           Scenarios.small
       }
-    Client(scenario.sample(), Configuration()).run
+    Client(scenario.sample(), Configuration()).run()
   }
 }

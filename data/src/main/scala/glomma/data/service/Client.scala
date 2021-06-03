@@ -7,8 +7,8 @@ import cats.effect._
 import glomma.data.data._
 import glomma.event.Event
 import io.circe.syntax._
+import org.http4s.blaze.client._
 import org.http4s.circe._
-import org.http4s.client.blaze._
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
 
@@ -46,7 +46,7 @@ final case class Client(scenario: Scenario, configuration: Configuration) {
     evts
   }
 
-  def run(implicit ce: ConcurrentEffect[IO]): IO[ExitCode] = {
+  def run(): IO[ExitCode] = {
     BlazeClientBuilder[IO](global).resource.use { client =>
       val evts = events()
 

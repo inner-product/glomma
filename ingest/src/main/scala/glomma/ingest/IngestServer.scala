@@ -1,15 +1,24 @@
 package glomma.ingest
 
-import com.twitter.finatra.http.HttpServer
-import com.twitter.finatra.http.routing.HttpRouter
+import cats.effect._
+import cats.effect.std.Queue
+import org.http4s.implicits._
+import org.http4s.blaze.server._
+import glomma.event.Event
 import glomma.ingest.service.BookService
+import scala.concurrent.ExecutionContext.global
 
-object IngestServerMain extends IngestServer
+object IngestServer extends IOApp {
+  val bookService = new BookService()
 
-class IngestServer extends HttpServer {
-
-  override def configureHttp(router: HttpRouter): Unit = {
-    router.add(new IngestController(new BookService()))
-    ()
-  }
+  def run(args: List[String]): IO[ExitCode] =
+    for {
+      queue <- Queue.bounded[IO, Event](5)
+      controller = new IngestController(queue, bookService)
+      server = BlazeServerBuilder[IO](global)
+        .bindHttp(8808, "localhost")
+        .withHttpApp(controller.route.orNotFound)
+        .resource
+      exitCode <- server.use(_ => IO.never).as(ExitCode.Success)
+    } yield exitCode
 }

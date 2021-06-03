@@ -11,8 +11,9 @@ class FrequentItemService[A](size: Int) {
   private val frequentItems: MisraGries[A] = new MisraGries(size)
   private val queue: ArrayBlockingQueue[Event[A]] = new ArrayBlockingQueue(5)
 
-  private val concurrentProcess = Future{
+  Future {
     // Get elements from the queue and take appropriate action
+    frequentItems
   }
 
   def add(element: A): Unit =
@@ -22,7 +23,7 @@ class FrequentItemService[A](size: Int) {
     val promise = Promise[Array[(A, Long)]]()
     queue.put(Get(promise))
 
-    promise
+    ???
   }
 }
 object FrequentItemService {

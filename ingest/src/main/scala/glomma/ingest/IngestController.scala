@@ -1,25 +1,26 @@
 package glomma.ingest
 
-import com.twitter.finagle.http.Request
-import com.twitter.finatra.http.Controller
+import cats.effect.IO
+import cats.effect.std.Queue
 import glomma.event.{Book, Event}
 import glomma.ingest.service.BookService
-import io.circe.parser.decode
+import org.http4s._
+import org.http4s.dsl.io._
+import org.http4s.circe.CirceEntityDecoder._
 
-class IngestController(bookService: BookService) extends Controller {
-  post("/event") { request: Request =>
-    val event = decode[Event](request.contentString)
-    println(event)
-    response.ok
-  }
+class IngestController(events: Queue[IO, Event], bookService: BookService) {
+  val route = HttpRoutes.of[IO] {
+    case r @ POST -> Root / "event" =>
+      for {
+        event <- r.as[Event]
+        _ <- events.offer(event)
+        ok <- Ok()
+      } yield ok
 
-  post("/books") { request: Request =>
-    decode[List[Book]](request.contentString) match {
-      case Left(_) =>
-        response.badRequest("Your JSON wasn't any good.")
-      case Right(books) =>
-        println(s"Received books ${books.take(10)} etc.")
+    case r @ POST -> Root / "books" =>
+      r.as[List[Book]].flatMap { books =>
         bookService.addBooks(books)
-    }
+        Ok()
+      }
   }
 }
