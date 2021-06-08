@@ -1,12 +1,14 @@
 package glomma.ingest.service
 
+import cats.effect.IO
+import cats.implicits._
 import glomma.data.data._
 import glomma.data.random._
 import glomma.event
 import glomma.event.Event
 import munit._
 
-class ValidationServiceSuite extends FunSuite {
+class ValidationServiceSuite extends CatsEffectSuite {
   // Sample a scenario used to generate our other data
   val scenario = Scenarios.small.sample()
   val badEvent = BadEvent(scenario)
@@ -17,31 +19,42 @@ class ValidationServiceSuite extends FunSuite {
   // All the valid events from the scenario
   val goodEvents = scenario.sessions.flatMap(_.toEvents.toList)
 
-  val bookService = new BookService()
-  bookService.addBooks(scenario.books.map(b => event.Book(b.name, b.price)))
-
-  val sessionService = new SessionService()
-  scenario.sessions.foreach(s =>
-    sessionService.addSession(
-      Event.SessionStart(s.sessionId, s.customer.customerId, s.customer.name)
-    )
-  )
-
-  val validationService: ValidationService =
-    new ValidationService(bookService, sessionService)
+  val validationService = {
+    for {
+      bookService <- IO(new BookService())
+      _ = bookService.addBooks(
+        scenario.books.map(b => event.Book(b.name, b.price))
+      )
+      sessionService <- SessionService()
+      _ <- scenario.sessions.foldMapM(s =>
+        sessionService.addSession(
+          Event.SessionStart(
+            s.sessionId,
+            s.customer.customerId,
+            s.customer.name
+          )
+        )
+      )
+    } yield ValidationService(bookService, sessionService)
+  }
 
   test("All bad events are invalid") {
-    badEvents.map(evt =>
-      assert(
-        validationService.validate(evt).isLeft,
-        s"$evt was not marked as invalid"
+    validationService.flatMap { service =>
+      badEvents.foldMapM(evt =>
+        service
+          .validate(evt)
+          .map(either =>
+            assert(either.isLeft, s"$evt was not marked as invalid")
+          )
       )
-    )
+    }
   }
 
   test("All good events are valid") {
-    goodEvents.map(evt =>
-      assertEquals(validationService.validate(evt), Right(evt))
-    )
+    validationService.flatMap { service =>
+      goodEvents.foldMapM(evt =>
+        service.validate(evt).map(either => assertEquals(either, Right(evt)))
+      )
+    }
   }
 }

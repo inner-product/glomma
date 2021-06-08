@@ -11,7 +11,7 @@ val breezeVersion = "1.1"
 val catsVersion = "2.6.1"
 val catsEffectVersion = "3.1.1"
 val circeVersion = "0.14.0"
-val fs2Version = "3.0.0"
+val fs2Version = "3.0.4"
 val http4sVersion = "0.23.0-RC1"
 val logbackVersion = "1.2.3"
 val munitVersion = "0.7.22"
@@ -32,7 +32,8 @@ val sharedSettings = Seq(
     "org.http4s"    %% "http4s-blaze-server" % http4sVersion,
     "org.http4s"    %% "http4s-blaze-client" % http4sVersion,
     "org.http4s"    %% "http4s-circe"        % http4sVersion,
-    "org.scalameta" %% "munit"               % munitVersion % Test
+    "org.scalameta" %% "munit"               % munitVersion % Test,
+    "org.typelevel" %% "munit-cats-effect-3" % "1.0.0" % Test
   ),
   scalacOptions ++= Seq(
     "-deprecation",

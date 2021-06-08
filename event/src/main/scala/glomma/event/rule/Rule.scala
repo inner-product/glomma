@@ -88,7 +88,7 @@ object Rule {
   implicit def ruleContravariant[F[_], E]: Contravariant[Rule[F, *, E]] =
     new Contravariant[Rule[F, *, E]] {
       def contramap[A, B](
-        fa: Rule[F, A, E]
+          fa: Rule[F, A, E]
       )(f: B => A): Rule[F, B, E] =
         fa.contramap(f)
     }

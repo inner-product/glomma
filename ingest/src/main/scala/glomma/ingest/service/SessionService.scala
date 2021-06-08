@@ -31,6 +31,6 @@ class SessionService(semaphore: Semaphore[IO]) {
 object SessionService {
   final case class Session(id: UUID, customerId: UUID, customerName: String)
 
-  def service(implicit f: GenConcurrent[IO, _]): IO[SessionService] =
+  def apply()(implicit f: GenConcurrent[IO, _]): IO[SessionService] =
     Semaphore(1).map(new SessionService(_))
 }

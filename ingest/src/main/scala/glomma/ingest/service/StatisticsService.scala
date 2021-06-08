@@ -1,26 +1,39 @@
 package glomma.ingest.service
 
-import scala.concurrent.Future
+import cats.effect.IO
+import cats.effect.kernel.GenConcurrent
+import cats.implicits._
 
-class StatisticsService() {
-  // Most frequently viewed books
-  private val frequentViews = new FrequentItemService[String](20)
-  // Most frequently purchased books
-  private val frequentPurchases = new FrequentItemService[String](20)
-  // Most frequent customers
-  private val frequentCustomers = new FrequentItemService[String](20)
+class StatisticsService(
+    val frequentViews: FrequentItemService[String],
+    val frequentPurchases: FrequentItemService[String],
+    val frequentCustomers: FrequentItemService[String]
+) {
 
-  def addView(bookName: String): Unit =
+  def addView(bookName: String): IO[Unit] =
     frequentViews.add(bookName)
 
-  def addPurchase(bookName: String): Unit =
+  def addPurchase(bookName: String): IO[Unit] =
     frequentPurchases.add(bookName)
 
   /** Observe that a customer started a session */
-  def addCustomer(customerName: String): Unit =
+  def addCustomer(customerName: String): IO[Unit] =
     frequentCustomers.add(customerName)
 
-  def getViews: Future[Array[(String, Long)]] = ???
-  def getPurchases: Future[Array[(String, Long)]] = ???
-  def getCustomers: Future[Array[(String, Long)]] = ???
+  def getViews: IO[IndexedSeq[(String, Long)]] =
+    frequentViews.get.map(arr => arr.toIndexedSeq)
+  def getPurchases: IO[IndexedSeq[(String, Long)]] =
+    frequentPurchases.get.map(arr => arr.toIndexedSeq)
+  def getCustomers: IO[IndexedSeq[(String, Long)]] =
+    frequentCustomers.get.map(arr => arr.toIndexedSeq)
+}
+object StatisticsService {
+  def apply()(implicit f: GenConcurrent[IO, _]): IO[StatisticsService] =
+    (
+      FrequentItemService[String](20),
+      FrequentItemService[String](20),
+      FrequentItemService[String](20)
+    ).mapN {
+      new StatisticsService(_, _, _)
+    }
 }

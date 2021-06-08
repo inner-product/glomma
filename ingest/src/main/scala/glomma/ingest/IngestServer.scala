@@ -1,12 +1,16 @@
 package glomma.ingest
 
+import scala.concurrent.ExecutionContext.global
+
 import cats.effect._
 import cats.effect.std.Queue
-import org.http4s.implicits._
-import org.http4s.blaze.server._
+import cats.implicits._
+import fs2.Stream
 import glomma.event.Event
-import glomma.ingest.service.BookService
-import scala.concurrent.ExecutionContext.global
+import glomma.event.Event.{Purchase, SessionStart, View}
+import glomma.ingest.service._
+import org.http4s.blaze.server._
+import org.http4s.implicits._
 
 object IngestServer extends IOApp {
   val bookService = new BookService()
@@ -14,7 +18,41 @@ object IngestServer extends IOApp {
   def run(args: List[String]): IO[ExitCode] =
     for {
       queue <- Queue.bounded[IO, Event](5)
+      stream = Stream.fromQueueUnterminated(queue)
+
       controller = new IngestController(queue, bookService)
+      sessionService <- SessionService()
+      statisticsService <- StatisticsService()
+      validationService = ValidationService(bookService, sessionService)
+
+      _ = stream
+        .evalMapFilter(evt =>
+          validationService
+            .validate(evt)
+            .map(either =>
+              either match {
+                case Left(error) =>
+                  println(s"Validation failed with reason $error")
+                  none[Event]
+                case Right(event) =>
+                  event.some
+              }
+            )
+        )
+        .evalMap(evt =>
+          evt match {
+            case s @ SessionStart(_, _, customerName) =>
+              for {
+                _ <- sessionService.addSession(s)
+                _ <- statisticsService.addCustomer(customerName)
+              } yield ()
+            case View(_, bookName) =>
+              statisticsService.addView(bookName)
+            case Purchase(_, bookName, _) =>
+              statisticsService.addPurchase(bookName)
+          }
+        )
+
       server = BlazeServerBuilder[IO](global)
         .bindHttp(8808, "localhost")
         .withHttpApp(controller.route.orNotFound)

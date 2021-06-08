@@ -1,34 +1,24 @@
 package glomma.ingest.service
 
+import cats.effect.IO
+import cats.effect.kernel.GenConcurrent
+import cats.effect.std.Semaphore
 import glomma.ingest.algorithm.MisraGries
-import java.util.concurrent.ArrayBlockingQueue
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, Promise}
 
-class FrequentItemService[A](size: Int) {
-  import FrequentItemService._
+class FrequentItemService[A](size: Int, semaphore: Semaphore[IO]) {
 
   private val frequentItems: MisraGries[A] = new MisraGries(size)
-  private val queue: ArrayBlockingQueue[Event[A]] = new ArrayBlockingQueue(5)
 
-  Future {
-    // Get elements from the queue and take appropriate action
-    frequentItems
-  }
+  def add(element: A): IO[Unit] =
+    semaphore.permit.use(_ => IO(frequentItems.add(element)))
 
-  def add(element: A): Unit =
-    queue.put(Observe(element))
-
-  def get: Future[Array[(A, Long)]] = {
-    val promise = Promise[Array[(A, Long)]]()
-    queue.put(Get(promise))
-
-    ???
+  def get: IO[Array[(A, Long)]] = {
+    semaphore.permit.use(_ => IO(frequentItems.get))
   }
 }
 object FrequentItemService {
-  // Events that can be send to the asynchronous parts of the frequent item service
-  sealed trait Event[A]
-  final case class Get[A](promise: Promise[Array[(A, Long)]]) extends Event[A]
-  final case class Observe[A](value: A) extends Event[A]
+  def apply[A](size: Int)(implicit
+      f: GenConcurrent[IO, _]
+  ): IO[FrequentItemService[A]] =
+    Semaphore(1).map(new FrequentItemService(size, _))
 }

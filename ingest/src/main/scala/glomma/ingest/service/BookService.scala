@@ -8,7 +8,7 @@ import glomma.event.Book
 class BookService() {
 
   /** Map from book name to book */
-  val booksByName: mutable.HashMap[String, Book] = mutable.HashMap.empty
+  private val booksByName: mutable.HashMap[String, Book] = mutable.HashMap.empty
 
   def addBooks(books: List[Book]): Unit =
     books.foreach { book =>

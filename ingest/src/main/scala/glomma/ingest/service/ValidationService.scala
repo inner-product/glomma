@@ -10,7 +10,10 @@ import glomma.event._
 import glomma.event.rule.Rule
 
 // Validate events
-class ValidationService(books: BookService, sessions: SessionService) {
+final case class ValidationService(
+    books: BookService,
+    sessions: SessionService
+) {
   import ValidationService._
 
   val viewSessionExists = sessionExists("view", sessions)
@@ -32,7 +35,8 @@ class ValidationService(books: BookService, sessions: SessionService) {
       case p: Purchase =>
         // First step of validation is to check session and easy properties of
         // the book
-        purchaseSessionExists.contramap[Purchase](_.sessionId)
+        purchaseSessionExists
+          .contramap[Purchase](_.sessionId)
           .and(bookNameNotEmpty.contramap[Purchase](_.bookName))
           .and(bookPricePositive.contramap[Purchase](_.bookPrice))
           .apply(p)
@@ -40,10 +44,11 @@ class ValidationService(books: BookService, sessions: SessionService) {
             // Second step we check if the book exists in the catalogue
             either match {
               case Left(_) => IO(either)
-              case Right(_) => purchaseBookIsCorrect(Book(p.bookName, p.bookPrice))
+              case Right(_) =>
+                purchaseBookIsCorrect(Book(p.bookName, p.bookPrice))
             }
           )
-          .as(event.asRight)
+          .map(_.as(event))
     }
 }
 object ValidationService {
