@@ -34,7 +34,7 @@ class IngestController(
     case GET -> Root / "sales" =>
       salesService.totalSales.flatMap(v => Ok(TotalSales(v)))
 
-    case GET -> Root / "sale" :? BookName(bookName)  =>
+    case GET -> Root / "sale" :? BookName(bookName) =>
       salesService
         .totalSalesForBook(bookName)
         .flatMap(v => Ok(Sales(bookName, v)))

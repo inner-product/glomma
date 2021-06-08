@@ -3,7 +3,7 @@ package glomma.ingest
 import java.util.UUID
 
 import cats.effect.IO
-import cats.effect.std.Queue
+import fs2.concurrent.Channel
 import glomma.event.Event
 import glomma.ingest.service._
 import munit._
@@ -14,13 +14,22 @@ import org.http4s.{Method, Request}
 class IngestControllerSuite extends CatsEffectSuite {
   val service: IO[IngestController] =
     for {
-      queue <- Queue.bounded[IO, Event](5)
+      channel <- Channel.bounded[IO, Event](5)
 
       bookService = new BookService()
+      sessionService <- SessionService()
       salesService = new SalesService()
       statisticsService <- StatisticsService()
+      validationService = ValidationService(bookService, sessionService)
+      _ <- IngestService(
+        channel,
+        salesService,
+        sessionService,
+        statisticsService,
+        validationService
+      )
     } yield new IngestController(
-      queue,
+      channel,
       bookService,
       salesService,
       statisticsService
