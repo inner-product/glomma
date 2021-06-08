@@ -18,5 +18,16 @@ object Event {
       bookPrice: Double
   ) extends Event
 
+  def sessionStart(
+      id: UUID,
+      customerId: UUID,
+      customerName: String
+  ): Event = SessionStart(id, customerId, customerName)
+  def view(sessionId: UUID, bookName: String): Event = View(sessionId, bookName)
+  def purchase(
+      sessionId: UUID,
+      bookName: String,
+      bookPrice: Double
+  ): Event = Purchase(sessionId, bookName, bookPrice)
   implicit val eventCodec = deriveCodec[Event]
 }

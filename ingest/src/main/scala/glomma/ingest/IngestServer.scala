@@ -13,13 +13,12 @@ import org.http4s.blaze.server._
 import org.http4s.implicits._
 
 object IngestServer extends IOApp {
-  val bookService = new BookService()
-
   def run(args: List[String]): IO[ExitCode] =
     for {
       queue <- Queue.bounded[IO, Event](5)
       stream = Stream.fromQueueUnterminated(queue)
 
+      bookService = new BookService()
       sessionService <- SessionService()
       salesService = new SalesService()
       statisticsService <- StatisticsService()
