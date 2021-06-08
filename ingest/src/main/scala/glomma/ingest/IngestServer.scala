@@ -3,9 +3,8 @@ package glomma.ingest
 import scala.concurrent.ExecutionContext.global
 
 import cats.effect._
-import cats.effect.std.Queue
 import cats.implicits._
-import fs2.Stream
+import fs2.concurrent.Channel
 import glomma.event.Event.{Purchase, SessionStart, View}
 import glomma.event._
 import glomma.ingest.service._
@@ -15,8 +14,7 @@ import org.http4s.implicits._
 object IngestServer extends IOApp {
   def run(args: List[String]): IO[ExitCode] =
     for {
-      queue <- Queue.bounded[IO, Event](5)
-      stream = Stream.fromQueueUnterminated(queue)
+      channel <- Channel.bounded[IO, Event](5)
 
       bookService = new BookService()
       sessionService <- SessionService()
@@ -24,13 +22,14 @@ object IngestServer extends IOApp {
       statisticsService <- StatisticsService()
       validationService = ValidationService(bookService, sessionService)
       controller = new IngestController(
-        queue,
+        channel,
         bookService,
         salesService,
         statisticsService
       )
 
-      _ = stream
+      stream = channel.stream
+      _ <- stream
         .evalMapFilter(evt =>
           validationService
             .validate(evt)
@@ -46,24 +45,28 @@ object IngestServer extends IOApp {
         )
         .evalMap(evt =>
           evt match {
-            case s @ SessionStart(_, _, customerName) =>
-              for {
-                _ <- sessionService.addSession(s)
-                _ <- statisticsService.addCustomer(customerName)
-              } yield ()
+            case s: SessionStart =>
+              sessionService.addSession(s)
             case View(_, bookName) =>
               statisticsService.addView(bookName)
-            case Purchase(_, bookName, bookPrice) =>
-              statisticsService
-                .addPurchase(bookName)
-                .flatMap(_ =>
-                  salesService.addPurchase(Book(bookName, bookPrice))
-                )
+            case Purchase(sessionId, bookName, bookPrice) =>
+              for {
+                _ <- statisticsService.addPurchase(bookName)
+                _ <- salesService.addPurchase(Book(bookName, bookPrice))
+                maybeSession <- sessionService.getSession(sessionId)
+                _ <- maybeSession match {
+	                case Some(session) => statisticsService.addCustomer(session.customerName)
+	                case None => IO.unit
+                }
+              } yield ()
           }
         )
+        .compile
+        .drain
+        .start
 
       server = BlazeServerBuilder[IO](global)
-        .bindHttp(8808, "localhost")
+        .bindHttp(8808)
         .withHttpApp(controller.route.orNotFound)
         .resource
       exitCode <- server.use(_ => IO.never).as(ExitCode.Success)

@@ -66,6 +66,7 @@ lazy val ingest = project
   .in(file("ingest"))
   .settings(
     sharedSettings,
+    Compile / run / fork := true,
     build := { Def.sequential(scalafixAll.toTask(""), scalafmtAll, Test / test).value }
   )
   .dependsOn(event, data % Test)
