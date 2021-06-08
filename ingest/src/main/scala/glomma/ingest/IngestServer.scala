@@ -6,8 +6,8 @@ import cats.effect._
 import cats.effect.std.Queue
 import cats.implicits._
 import fs2.Stream
-import glomma.event.Event
 import glomma.event.Event.{Purchase, SessionStart, View}
+import glomma.event._
 import glomma.ingest.service._
 import org.http4s.blaze.server._
 import org.http4s.implicits._
@@ -20,10 +20,16 @@ object IngestServer extends IOApp {
       queue <- Queue.bounded[IO, Event](5)
       stream = Stream.fromQueueUnterminated(queue)
 
-      controller = new IngestController(queue, bookService)
       sessionService <- SessionService()
+      salesService = new SalesService()
       statisticsService <- StatisticsService()
       validationService = ValidationService(bookService, sessionService)
+      controller = new IngestController(
+        queue,
+        bookService,
+        salesService,
+        statisticsService
+      )
 
       _ = stream
         .evalMapFilter(evt =>
@@ -48,8 +54,12 @@ object IngestServer extends IOApp {
               } yield ()
             case View(_, bookName) =>
               statisticsService.addView(bookName)
-            case Purchase(_, bookName, _) =>
-              statisticsService.addPurchase(bookName)
+            case Purchase(_, bookName, bookPrice) =>
+              statisticsService
+                .addPurchase(bookName)
+                .flatMap(_ =>
+                  salesService.addPurchase(Book(bookName, bookPrice))
+                )
           }
         )
 

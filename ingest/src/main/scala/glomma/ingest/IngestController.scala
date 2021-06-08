@@ -2,13 +2,19 @@ package glomma.ingest
 
 import cats.effect.IO
 import cats.effect.std.Queue
-import glomma.event.{Book, Event}
-import glomma.ingest.service.BookService
+import cats.implicits._
+import glomma.event._
+import glomma.ingest.service._
 import org.http4s._
-import org.http4s.circe.CirceEntityDecoder._
+import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.io._
 
-class IngestController(events: Queue[IO, Event], bookService: BookService) {
+class IngestController(
+    events: Queue[IO, Event],
+    bookService: BookService,
+    salesService: SalesService,
+    statsService: StatisticsService
+) {
   val route = HttpRoutes.of[IO] {
     case r @ POST -> Root / "event" =>
       for {
@@ -22,5 +28,21 @@ class IngestController(events: Queue[IO, Event], bookService: BookService) {
         bookService.addBooks(books)
         Ok()
       }
+
+    case GET -> Root / "sales" =>
+      salesService.totalSales.flatMap(v => Ok(TotalSales(v)))
+
+    case GET -> Root / "sale" / bookName =>
+      salesService
+        .totalSalesForBook(bookName)
+        .flatMap(v => Ok(Sales(bookName, v)))
+
+    case GET -> Root / "stats" =>
+      (
+        statsService.getViews,
+        statsService.getPurchases,
+        statsService.getCustomers
+      ).mapN((v, p, c) => Statistics(v, p, c)).flatMap(Ok(_))
+
   }
 }
