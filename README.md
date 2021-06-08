@@ -75,3 +75,20 @@ curl -G "http://localhost:8808/sale" --data-urlencode "bookName=A Wrinkle in Tim
  ```json
 {"bookName":"A Wrinkle in Time","sales":1424.0500000000006}⏎          
  ```
+
+
+## Oh No!
+
+Things are broken, and you---yes you!---must fix them.
+
+You have some tools are your disposal:
+
+- You have tests. You can run the `build` task from within sbt to run them (and reformat your code)
+- You have the description above of how things should work.
+- You have various comments within the code.
+- You can write more tests.
+- You can ask questions!
+
+Make everything work. It will be wonderful!
+
+Note: you will occasionally see test failures in the `glomma.data` package. These are non-deterministic tests ( :-( ) and you can safely ignore these failures.

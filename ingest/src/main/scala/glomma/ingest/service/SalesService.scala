@@ -17,8 +17,7 @@ class SalesService() {
       salesByBook.updateWith(book.name)(opt =>
         opt.map(_ + book.price).orElse(book.price.some)
       )
-    ) >>
-      IO(totalSalesAdder.add(book.price))
+    ) >> IO.unit
   }
 
   def totalSales: IO[Double] =

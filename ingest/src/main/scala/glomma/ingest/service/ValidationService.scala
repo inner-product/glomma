@@ -23,8 +23,8 @@ final case class ValidationService(
 
   def validate(event: Event): IO[Either[NonEmptyList[String], Event]] =
     event match {
-      case SessionStart(_, _, customerName) =>
-        customerNameNotEmpty(customerName).map(_.as(event))
+      case SessionStart(_, _, _) =>
+        IO(Right(event))
 
       case View(sessionId, bookName) =>
         viewSessionExists
@@ -38,16 +38,7 @@ final case class ValidationService(
         purchaseSessionExists
           .contramap[Purchase](_.sessionId)
           .and(bookNameNotEmpty.contramap[Purchase](_.bookName))
-          .and(bookPricePositive.contramap[Purchase](_.bookPrice))
           .apply(p)
-          .flatMap(either =>
-            // Second step we check if the book exists in the catalogue
-            either match {
-              case Left(_) => IO(either)
-              case Right(_) =>
-                purchaseBookIsCorrect(Book(p.bookName, p.bookPrice))
-            }
-          )
           .map(_.as(event))
     }
 }

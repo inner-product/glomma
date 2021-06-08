@@ -17,8 +17,10 @@ class StatisticsService(
     frequentPurchases.add(bookName)
 
   /** Observe that a customer started a session */
-  def addCustomer(customerName: String): IO[Unit] =
-    frequentCustomers.add(customerName)
+  def addCustomer(customerName: String): IO[Unit] = {
+    customerName.size
+    IO.unit
+  }
 
   def getViews: IO[IndexedSeq[(String, Long)]] =
     frequentViews.get.map(arr => arr.toIndexedSeq)

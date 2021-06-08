@@ -29,9 +29,7 @@ object Rule {
     def apply(
         input: A
     )(implicit s: Applicative[F], m: Semigroup[E]): F[Either[E, A]] =
-      (left(input), right(input)).mapN((eA, eB) =>
-        (eA, eB).parMapN((_, _) => input)
-      )
+      right(input)
   }
   final case class Or[F[_], A, E](left: Rule[F, A, E], right: Rule[F, A, E])
       extends Rule[F, A, E] {

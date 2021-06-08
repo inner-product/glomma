@@ -40,12 +40,14 @@ class ValidationServiceSuite extends CatsEffectSuite {
 
   test("All bad events are invalid") {
     validationService.flatMap { service =>
-      badEvents.foldMapM(evt =>
-        service
-          .validate(evt)
-          .map(either =>
-            assert(either.isLeft, s"$evt was not marked as invalid")
-          )
+      val validations = badEvents.traverse(evt => service.validate(evt))
+      validations.map(list =>
+        list.foreach(either =>
+          either match {
+            case Left(_)    => ()
+            case Right(evt) => fail(s"$evt was not marked as invalid")
+          }
+        )
       )
     }
   }
